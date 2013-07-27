@@ -1,0 +1,109 @@
+//
+//  main.cpp
+//  MSTBasic
+//
+
+
+#include <iostream>
+#include <cmath>
+
+
+typedef struct{
+  float x, y, z, m;
+}INPUT_FILE_DATA;
+
+#define COUNT 1000
+
+INPUT_FILE_DATA gData[COUNT];
+bool            gConnected[COUNT];
+int             gRemaining;
+
+void Connect(unsigned long i, unsigned long j) {
+
+  std::cout << i << " to " << j << std::endl;
+
+}
+
+void GetShortestDistance() {
+
+  int first = -1;
+  int second = -1;
+
+  float dist;
+  float shortestDist = 20e20;
+
+  for(int i = 0; i < COUNT; i++){
+    if(gConnected[i] == true){
+
+
+      for(int j = 0; j < COUNT; j++){
+        if(gConnected[j] == false){
+          dist = sqrt(pow(gData[j].x - gData[i].x, 2) +
+                      pow(gData[j].y - gData[i].y, 2) +
+                      pow(gData[j].z - gData[i].z, 2));
+
+          if(dist < shortestDist){
+            shortestDist = dist;
+            first = i;
+            second = j;
+          }
+
+
+        }
+      }
+    }
+  }
+
+  gConnected[second] = true;
+  gRemaining--;
+  Connect(first, second);
+
+}
+
+void Kruskal() {
+  //  Set all connected to false;
+  gRemaining = COUNT - 1;
+  for(int i = 1; i < COUNT; i++){
+    gConnected[i] = false;
+  }
+  gConnected[0] = true;
+
+  while(gRemaining > 0){
+    GetShortestDistance();
+  }
+
+
+
+
+}
+
+
+void Load() {
+  FILE *fp;
+  int i;
+
+
+  fp = fopen("/Users/axelion/Desktop/ZSpace-Modeling/bin/data/optimal-part.bin", "rb");
+
+  if(!fp){
+    printf("CAKE");
+    exit(0);
+  }
+
+  fread(gData, sizeof(INPUT_FILE_DATA), COUNT, fp);
+
+  fclose(fp);
+
+}
+
+
+int main(int argc, const char * argv[])
+{
+
+  // insert code here...
+  Load();
+  Kruskal();
+
+  std::cout << "Hello, World!\n";
+    return 0;
+}

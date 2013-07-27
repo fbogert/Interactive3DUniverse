@@ -1,0 +1,189 @@
+// Light position
+uniform float  pointLightPos[3];
+uniform float  pointLightRot[3];
+uniform int    isPenActive;
+// 
+uniform float opacity;
+uniform float eyePos[3];
+
+// Vertex information
+varying vec4 myColor;
+varying vec4 myPos;
+
+attribute float mass;
+attribute float type;
+
+// Output point light info
+varying vec4 diffuse, ambientGlobal, ambient, ecPos;
+varying vec3 normal, halfVector;
+varying float dist;
+
+void main(void)
+{
+   vec4 a = gl_Vertex;  
+    
+   myPos = a;
+   myColor = gl_Color;
+   myColor.a *= opacity;
+
+   // Lighting calculations
+   normal = normalize(gl_NormalMatrix * gl_Normal);
+   ecPos = gl_ModelViewMatrix * gl_Vertex;
+
+   //vec4 stylus = ecPos * stylusTransform;
+
+   halfVector = gl_LightSource[0].halfVector.xyz;
+   //halfVector = pointLightPos;   
+
+
+//   diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
+//   ambient = gl_FrontMaterial.ambient * gl_LightSource[0].ambient;
+//   ambientGlobal = gl_LightModel.ambient * gl_FrontMaterial.ambient;
+    
+   //gl_FogFragCoord = abs(gl_Position.z / gl_Position.w);
+   //myColor = vec4(0.0, 0.0, 0.0, 0.0);   
+   //if(type == 1){
+   
+     float cscale = 0.0;
+	 
+	 if (mass >= 10e13) {
+	     cscale += 0.1;
+	 }
+	 if (mass >= 10e12) {
+	     cscale += 0.1;
+	 }
+	 if (mass >= 5e12) {
+	     cscale += 0.1;
+	 }
+	 if (mass >= 10e11) {
+	     cscale += 0.1;
+	 }
+	 if (mass >= 5e11) {
+	     cscale += 0.3;
+	 }
+	 if (mass >= 10e10) {
+	     cscale += 0.0;
+	 }
+   
+   //  myColor = vec4(0.0, cscale, 1.0 - cscale, 1.0);
+  
+   if (isPenActive != -1) {
+   
+   //pointLightPos starts rotated, pointing down the "z axis"
+   //first rotate the vertex same as the pointLight
+   float transX = a.x;
+   float transY = a.y; 
+   float transZ = a.z;
+ 
+  
+   transX -= pointLightPos[0];
+   transY -= pointLightPos[1];
+   transZ -= pointLightPos[2];
+   
+   
+   //Rotation along x axis -- I think the x axis is up and down on a 2d screen
+   float rYZ = sqrt( transZ*transZ  + transY*transY );
+   float aYZ = atan(transY,transZ) - pointLightRot[0];
+   
+   transZ = rYZ * cos(aYZ);
+   transY = rYZ * sin(aYZ);
+   
+   //Rotation along y axis - I think the y axis is left and right on a 2D screen
+   float rXZ = sqrt( transX*transX  + transZ*transZ );
+   float aXZ = atan(transX,transZ) + pointLightRot[1];
+   
+   transZ = rXZ * cos(aXZ);
+   transX = rXZ * sin(aXZ);
+   
+   //Rotation along y axis - I think the y axis is left and right on a 2D screen
+   float rYX = sqrt( transX*transX  + transY*transY );
+   float aYX = atan(transY,transX) + pointLightRot[2];
+   
+   transX = rYX * cos(aYX);
+   transY = rYX * sin(aYX);
+  
+   //Now that the vertex is in the properly rotated frame
+   //translate it so the pointLight is at 0,0,0
+   
+   
+   if (isPenActive == 0) {
+    
+      //float scale = sqrt(pointLightPos[2]*pointLightPos[2] + pointLightPos[1]*pointLightPos[1]);
+      
+	  float scale = abs(pointLightPos[1]*2);
+	  if (pointLightPos[1] < 0) scale = 1/scale;
+
+	  //gl_Vertex.x = transX;
+      //gl_Vertex.z = transY;
+      //gl_Vertex.y = transZ;
+	  
+	  //float r1 = sqrt(pointLightPos[1]*pointLightPos[1] + pointLightPos[2]*pointLightPos[2]);
+	  //float r2 = sqrt(gl_Vertex.y*gl_Vertex.y + gl_Vertex.z*gl_Vertex.z);
+	  //float theta = atan(gl_Vertex.z, gl_Vertex.y);
+	  
+	  //gl_Vertex.y = (r1+r2)*
+	  
+	  gl_Vertex.x = (gl_Vertex.x*scale + pointLightPos[0]);
+      gl_Vertex.y = (gl_Vertex.y*scale + pointLightPos[1]);
+      gl_Vertex.z = (gl_Vertex.z*scale + pointLightPos[2]);
+	  myPos = gl_Vertex;
+   }
+   else {
+   
+   //Now test if the vertex lies in the light cone
+   //Test where in the x-y plane the vertex is
+   //The vetex must be infront (negative z) of the light
+   
+
+   if (transZ < 0.0 && transZ > -0.7) {
+       transX = abs(transX);
+       float angle = abs(atan(transZ/transX));
+	   
+	   //how far away is the vertex radially in the x-y plane
+	   float r = sqrt(transX*transX + transY*transY);
+	   
+	   //if the vertex is inside the cone make it white
+	 
+       if( r < transZ*transZ*0.7 + 0.06 && angle > 0.5){
+          
+           myColor = vec4(0.8, 0.0, 0.2, 1.0);
+           if (type == 1) {
+		   myColor = vec4(1.0, 1.0, 1.0, 1.0);
+		   }
+		   myColor = myColor * ((1.0 / pow((transZ - 0.1), 2)));
+		   //gl_PointSize = 10;
+       }
+   }
+   
+   
+   }
+   //if (abs(transX) < 0.1 && abs(transY) < 0.1 && transZ > -0.7 && transZ < 0) {
+   //    myColor = vec4(1.0, 1.0, 1.0, 1.0);
+   //}
+
+  
+   }  
+   
+   gl_Position = ftransform();
+   
+   float d = 0.0;
+  
+  if (isPenActive  == 0) {
+	  d = distance(gl_Vertex.xyz, vec3(pointLightPos[0],pointLightPos[1],pointLightPos[2]));
+  }
+  else {
+	  d = distance(gl_Position.xyz, vec3(eyePos[0],eyePos[1],eyePos[2]));
+  }
+   if(d >= 0.0){
+    myColor = myColor * ((1.0 / pow((d - 0.0), 3)));
+   }
+   
+   /*if(d <= 0.2){
+    myColor = myColor *  2.0;
+   }
+   if(d <= 0.1){
+    myColor = myColor *  2.0;
+   }*/
+   //}   
+   
+}

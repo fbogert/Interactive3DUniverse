@@ -1,0 +1,14 @@
+
+uniform float opacity;
+varying vec4 myColor;
+
+ uniform sampler3D VolumeTexture;
+ 
+//varying vec4 myPos;
+
+void main (void)  
+{     
+       
+   gl_FragColor = myColor;
+  
+}
